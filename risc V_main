@@ -50,6 +50,9 @@
    //IMEM
    `READONLY_MEM($pc, $$instr[31:0]);
    
+   //SUPPRESS UNUSED SIGNAL WARNING
+   `BOGUS_USE($rd $rd_valid $rs1 $rs1_valid $funct7 $funct3 $imm_valid $opcode $rs2 $rs2_valid);
+   
    //DECODE LOGIC/ INSTR TYPE
    
    $is_r_instr = ($instr[6:2] == 5'b01011) || ($instr[6:2] ==? 5'b011x0) || ($instr[6:2] == 5'b10100) ;
@@ -67,6 +70,16 @@
    $rs2[4:0] = $instr[24:20];
    $rd[4:0] = $instr[11:7];
    $opcode[6:0] = $instr[6:0];
+   
+   //CHECKNG VALIDITY OF FIELDS
+   
+   $rd_valid = $is_r_instr || $is_u_instr || $is_b_instr || $is_j_instr;
+   $rs1_valid = $is_r_instr || $is_i_instr || $is_b_instr || $is_s_instr;
+   $rs2_valid = $is_r_instr || $is_s_instr || $is_b_instr;
+   $imm_valid = $is_i_instr || $is_s_instr || $is_b_instr || $is_u_instr|| $is_j_instr|| $is_j_instr;
+   
+   
+   
    
 
    // Assert these to end simulation (before Makerchip cycle limit).
