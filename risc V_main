@@ -1,5 +1,6 @@
 \m4_TLV_version 1d: tl-x.org
 \SV
+   // This code can be found in: https://github.com/stevehoover/LF-Building-a-RISC-V-CPU-Core/risc-v_shell.tlv
    
    m4_include_lib(['https://raw.githubusercontent.com/stevehoover/warp-v_includes/1d1023ccf8e7b0a8cf8e8fc4f0a823ebb61008e3/risc-v_defs.tlv'])
    m4_include_lib(['https://raw.githubusercontent.com/stevehoover/LF-Building-a-RISC-V-CPU-Core/main/lib/risc-v_shell_lib.tlv'])
@@ -42,7 +43,7 @@
    
    $reset = *reset;
    
-   //PC LOGIC
+   //PC
    $pc[31:0] = >>1$next_pc;    
    $next_pc[31:0] = $reset ? 32'b0000 : ($pc + 32'd4);
    
@@ -58,8 +59,16 @@
    $is_u_instr = $instr[6:2] ==? 5'b0x101;
    $is_j_instr = $instr[6:2] ==? 5'b11011;
    
-
+   //EXTRACT NON-IMMEDIATE TYPE FIELDS FROM INSTRUCTIONS
    
+   $funct7[6:0] = $instr[31:25];
+   $funct3[2:0] = $instr[14:12];
+   $rs1[4:0] = $instr[19:15];
+   $rs2[4:0] = $instr[24:20];
+   $rd[4:0] = $instr[11:7];
+   $opcode[6:0] = $instr[6:0];
+   
+
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = 1'b0;
    *failed = *cyc_cnt > M4_MAX_CYC;
