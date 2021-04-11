@@ -127,6 +127,9 @@
    $rd2_en           = $rs2_valid;   //read port 2 enable
    $src1_value[31:0] = $rd1_data; //read port 1 data
    $src2_value[31:0] = $rd2_data; //read port 2 data
+   $wr_en            = $rd_valid; //write port enable
+   $wr_index[4:0]    = $rd;//write port address
+   
    
    `BOGUS_USE($src1_value $src2_value)
    
@@ -137,6 +140,10 @@
                    32'b0;  
                    
    `BOGUS_USE($result)
+   
+   //Implement Register File Write
+   
+   $wr_data[31:0] = $wr_en ? $result : 32'b0;
    
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = 1'b0;
