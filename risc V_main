@@ -45,7 +45,10 @@
    
    //PC
    $pc[31:0]      = >>1$next_pc;    
-   $next_pc[31:0] = $reset ? 32'b0000 : ($pc + 32'd4);
+   
+   $next_pc[31:0] = $reset ? 32'b0000 :           //reset PC
+                    $taken_branch ? $br_tgt_pc :  //PC changed to branch address if branch is taken
+                    $pc + 32'd4;                  //default case : next instruction is fetched
    
    //IMEM
    `READONLY_MEM($pc, $$instr[31:0]);
@@ -145,8 +148,20 @@
    
    $wr_data[31:0] = $wr_en ? $result : 32'b0;
    
+   //Implement Branch logic
+   
+   $taken_branch = $is_beq  ?  ($src1_value == $src2_value) :
+                   $is_bne  ?  ($src1_value != $src2_value) :
+                   $is_blt  ?  (($src1_value < $src2_value)  ^ ($src1_value[31] != $src2_value[31])) : //signed nuumbers
+                   $is_bge  ?  (($src1_value >= $src2_value) ^ ($src1_value[31] != $src2_value[31])) :
+                   $is_bltu ?  ($src1_value < $src2_value)  :
+                   $is_bgeu ?  ($src1_value >= $src2_value) :
+                   1'b0;
+   
+   $br_tgt_pc[31:0]  =  $pc + $imm; //calculate target pc address. Also next pc is changed to this if branch is taken
+                   
    // Assert these to end simulation (before Makerchip cycle limit).
-   *passed = 1'b0;
+   m4+tb()
    *failed = *cyc_cnt > M4_MAX_CYC;
    
    m4+rf(32, 32, $reset, $wr_en, $wr_index[4:0], $wr_data[31:0], $rd1_en, $rd1_index[4:0], $rd1_data, $rd2_en, $rd2_index[4:0], $rd2_data)
