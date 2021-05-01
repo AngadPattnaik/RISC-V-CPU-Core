@@ -23,6 +23,8 @@
    
    $next_pc[31:0] = $reset ? 32'b0000 :           //reset PC
                     $taken_branch ? $br_tgt_pc :  //PC changed to branch address if branch is taken
+                    $is_jal ? $br_tgt_pc:
+                    $is_jalr ? $jalr_tgt_pc:
                     $pc + 32'd4;                  //default case : next instruction is fetched
    
    //IMEM
@@ -159,14 +161,22 @@
                    $is_slti ? (($src1_value[31]==$imm[31])? $sltiu_result:{31'b0,$src1_value[31]}):
                    /*$is_sra  ? 
                    $is_srai ?*/
+                   $is_load ? $src1_value + $imm :
+                   $is_s_instr ? $src1_value + $imm :
                    32'b0;
                    
    `BOGUS_USE($result)
    
+  /* $datamem_addr[31:0] = ($is_load || $is_s_instr) ? $result[31:0] : 32'bx; no need datamem will be 
+   accessed at the correct address when is_load and is_s_instr is asserted */
+   
+   
    //Implement Register File Write
    
-   $wr_data[31:0] = $wr_en ? $result : 32'b0;
-   
+   $wr_data[31:0] = $wr_en ? $result :
+                    $is_load ? $load_data:
+                    32'b0;
+     
    //Implement Branch logic
    
    $taken_branch = $is_beq  ?  ($src1_value == $src2_value) :
@@ -178,12 +188,16 @@
                    1'b0;
    
    $br_tgt_pc[31:0]  =  $pc + $imm; //calculate target pc address. Also next pc is changed to this if branch is taken
-                   
+   
+   //Unconditional Branch target(jump Logic)
+   $jalr_tgt_pc[31:0] = $src1_value + $imm;
+   
    // Assert these to end simulation (before Makerchip cycle limit).
    m4+tb()
    *failed = *cyc_cnt > M4_MAX_CYC;
    
    m4+rf(32, 32, $reset, $wr_en, $wr_index[4:0], $wr_data[31:0], $rd1_en, $rd1_index[4:0], $rd1_data, $rd2_en, $rd2_index[4:0], $rd2_data)
+   m4+dmem(32, 32, $reset, $result[6:2], $is_s_instr, $src2_value, $is_load, $load_data)
    //m4+dmem(32, 32, $reset, $addr[4:0], $wr_en, $wr_data[31:0], $rd_en, $rd_data)
    m4+cpu_viz()
 \SV
